@@ -20,7 +20,7 @@ int main(int argc, char ** argv)
 
     if(argc < 3)
     {
-        printf("Usage: ./client IP port.\n");
+        printf("./client <SERVER_IP> <SERVER_PORT\n");
         return 1;
     }
     // inet_pton and inet_ntop need
