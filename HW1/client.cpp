@@ -89,7 +89,8 @@ int main(int argc, char ** argv)
             default:
                 if(FD_ISSET(0, &reading_fds))
                 {
-                    fgets(commandline, MAXLINE, stdin);
+                    if(fgets(commandline, MAXLINE, stdin) == NULL)
+                        exit(0);
                     if(string("exit\n") == commandline)
                         exit(0);
                     write(socket_fd, commandline, strlen(commandline));
@@ -108,5 +109,7 @@ int main(int argc, char ** argv)
                 }
                 break;
         }
+        FD_CLR(socket_fd, &reading_fds);
+        FD_CLR(0, &reading_fds);
     }
 }
