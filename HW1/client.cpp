@@ -38,7 +38,7 @@ int main(int argc, char ** argv)
     server_addr.sin_family = AF_INET;
     server_addr.sin_port =  htons(atoi(argv[2]));
 
-    if(!inet_pton(AF_INET, argv[1], &server_addr.sin_addr))
+    if(!inet_pton(AF_INET, argv[1], &server_addr.sin_addr.s_addr))
     {
         printf("fuckyou invalid IP address\n");
         exit(1);
