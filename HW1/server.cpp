@@ -10,19 +10,25 @@
 #include <sys/select.h>
 #include <vector>
 
+//#include <Server.h>
+
+#define MAXLINE 2000
+#define SERVERCOUNT 1
+#define FUCKYOU "fuckyou!!!!!!!!!!!"
+
 using std::string;
 using std::vector;
 
 struct client_info
 {
-    sockaddr_in client_ip_port;
+    sockaddr_in ip_port;
     string name = "anonymous";
-    int client_socket_fd;
-}
+    int socket_fd;
+};
 
 int main(int argc, char **argv)
 {
-    if(arcg < 2)
+    if(argc < 2)
     {
         printf("./server <SERVER_PORT>\n");
         return 1;
@@ -37,11 +43,11 @@ int main(int argc, char **argv)
 
     //bind socket
     sockaddr_in server_ip_port;
-    bzero(server_ip_port, sizeof(server_ip_port));
+    bzero(&server_ip_port, sizeof(server_ip_port));
     server_ip_port.sin_family = AF_INET;
-    server_ip_port.sin_port = atoi(argv[1]);
-    server_ip_port.sin_addr.s_addr = htonl (INADDR_ANY);
-    if(!bind(server_socket_fd, server_ip_port))
+    server_ip_port.sin_port = htons(atoi(argv[1]));
+    server_ip_port.sin_addr.s_addr = htonl(INADDR_ANY);
+    if(bind(server_socket_fd, (sockaddr *)&server_ip_port, sizeof(server_ip_port)) == -1)
     {
         printf("bind socket error\n");
         exit(1);
@@ -50,36 +56,58 @@ int main(int argc, char **argv)
     //listen socket
     listen(server_socket_fd, 15);
     
-    vector<client_info>;
+    vector<client_info> clients;
     //store all clients' information
-
-    //----------------select routine---------------
-    struct timeval tv;
-    tv.tv_sec = 0;
-    tv.tv_usec = 50000;
-    
-    fd_set reading_fds;
-    //fd_set writing_fds;
-
-    //reading fds
-    FD_ZERO(&reading_fds);
-    FD_SET(socket_fd, &reading_fds);
-    FD_SET(0, &reading_fds);
-    //no need to check writing fds, just fuck up them
-
-    // maxfdp need to one more than all file_descriptor's max's value
-    int maxfdp = socket_fd + 1;
-    //above maybe need to fix?
-    //maybe change the way maxfdp is assigned
-    //e.g.
-    //fd = socket(...);
-    //maxfdp = maxfdp > fd ? maxfdp : fd;
-    //--------------end of select routine-------------
     
     while(true)
     {
-        sockaddr_in new_client_ip_port;
-        bzero(&new_client_ip_port, sizeof(sockaddr_in));
-        int new_client_fd = accept((sockaddr*)new_client_ip_port)
+        //----------------select routine---------------
+        fd_set reading_fds;
+        //fd_set writing_fds;
+
+        //reading fds
+        FD_ZERO(&reading_fds);
+        FD_SET(server_socket_fd, &reading_fds);
+        printf("set fd\n");
+        for(int i = 0; i < clients.size(); i++)
+        {
+            FD_SET(clients[i].socket_fd, &reading_fds);
+        }
+        int maxfdp = clients.size() + SERVERCOUNT + 1;
+        printf("set fd complete\n");
+
+        printf("select:\n");
+        switch( select(maxfdp, &reading_fds, NULL, NULL, NULL))
+        {
+            case -1:
+                exit(-1);
+                break;
+            case 0:
+                break;
+            default:
+                if(FD_ISSET(server_socket_fd, &reading_fds))// new connection from client
+                {
+                    printf("new client!!!\n");
+                    client_info new_client;
+                    bzero(&new_client.ip_port, sizeof(sockaddr_in));
+                    socklen_t len;
+                    int new_client_fd =
+                        accept(server_socket_fd, (sockaddr*)&new_client.ip_port, &len);
+                    write(new_client_fd, FUCKYOU, sizeof(FUCKYOU));
+                    printf("add new client complete\n");
+                }
+                else
+                {
+                    char command_from_client[MAXLINE];
+                    for(int i = 0; i < clients.size(); i++)
+                    {
+                        if(FD_ISSET(clients[i].socket_fd, &reading_fds)) // some client sends command to server
+                        {
+                            write(clients[i].socket_fd, FUCKYOU, sizeof(FUCKYOU));
+                        }
+                    }
+                }           
+        }
+        printf("select complete\n");
     }
 }
