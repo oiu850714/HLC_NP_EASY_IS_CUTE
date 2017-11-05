@@ -44,7 +44,7 @@ struct client_info
 void generate_ip_port_pair_c_str(const client_info &client, string &ip_port_pair_string)
 {
     char buff[20];
-    inet_ntop(AF_INET, &client.ip_port.sin_addr, buff, sizeof(buff));
+    inet_ntop(AF_INET, &client.ip_port.sin_addr.s_addr, buff, sizeof(buff));
     ip_port_pair_string += buff;
     ip_port_pair_string += "/";
 
