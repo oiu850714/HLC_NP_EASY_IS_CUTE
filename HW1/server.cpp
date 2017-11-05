@@ -185,21 +185,14 @@ void parse_command_and_send_message(vector<client_info> &clients, char *command_
         string yell_user = find_user_name_by_sockfd(clients, client_socket_fd);
         for(auto client: clients)
         {
-            if(client.socket_fd == client_socket_fd)
-            {
-                write(client.socket_fd, SUCCESS_MSG, strlen(SUCCESS_MSG));
-            }
-            else
-            {
-                string yell_msg = SERVER_PROMPT;
-                yell_msg += " ";
-                yell_msg += yell_user;
-                yell_msg += " ";
-                yell_msg += "yell ";
-                //yell_msg += string(command_from_client).substr(5);
-                yell_msg += yell_arg + "\n";
-                write(client.socket_fd, yell_msg.c_str(), yell_msg.size());
-            }
+            string yell_msg = SERVER_PROMPT;
+            yell_msg += " ";
+            yell_msg += yell_user;
+            yell_msg += " ";
+            yell_msg += "yell ";
+            //yell_msg += string(command_from_client).substr(5);
+            yell_msg += yell_arg + "\n";
+            write(client.socket_fd, yell_msg.c_str(), yell_msg.size());
         }
     }
     else if(command == "tell")
@@ -239,7 +232,7 @@ void parse_command_and_send_message(vector<client_info> &clients, char *command_
             write(user_want_to_tell_sockfd, tell_msg.c_str(), tell_msg.size());
         }
     }
-    else if(command ==  "name")
+    else if(command == "name")
     {
         //write(client_socket_fd, "NAME!!\n", strlen("NAME!!\n"));
         string name_want_to_change;
