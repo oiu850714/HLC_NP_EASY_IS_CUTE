@@ -231,7 +231,10 @@ void parse_command_and_send_message(vector<client_info> &clients, char *command_
         for(; i < name_want_to_change.size(); i++)
         {
             if(!isalpha(name_want_to_change[i]))
+            {
+                i = 10000;
                 break;
+            }
         }
         if(i < 2 || i >= 12)
         {
