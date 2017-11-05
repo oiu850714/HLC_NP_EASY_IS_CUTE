@@ -113,7 +113,7 @@ int send_welcome_and_add_client(int server_socket_fd, vector<client_info> &clien
 {
     client_info new_client;
     bzero(&new_client.ip_port, sizeof(sockaddr_in));
-    socklen_t len;
+    socklen_t len = sizeof(sockaddr_in);
     new_client.socket_fd =
         accept(server_socket_fd, (sockaddr*)&new_client.ip_port, &len);
     
