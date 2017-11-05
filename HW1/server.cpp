@@ -68,6 +68,25 @@ string find_user_name_by_sockfd(vector<client_info> &clients, int client_socket_
     }
 }
 
+void clear_offline_user(vector<client_info> &clients, int client_socket_fd)
+{
+    string offline_msg = find_user_name_by_sockfd(clients, client_socket_fd) + " is offline.\n";
+    auto old_clients = clients;
+    clients.clear();
+    for(auto client : old_clients)
+    {
+        if(client.socket_fd == client_socket_fd)
+        {
+            close(client_socket_fd);
+        }
+        else
+        {
+            clients.push_back(client);
+            write(client.socket_fd, offline_msg.c_str(), offline_msg.size());
+        }
+    }
+}
+
 int find_user_name_by_string_name(vector<client_info> &clients, const string &name)
 {
     for(auto client : clients)
@@ -127,6 +146,8 @@ void parse_command_and_send_message(vector<client_info> &clients, char *command_
     stringstream SS;
     SS << command_from_client;
     std::cout << "command's content: " << SS.str() << "\n";
+    if(SS.str() == "\n") // THE user just type a fucking enter
+        return;
 
     string command;
     SS >> command;
@@ -276,7 +297,9 @@ void parse_command_and_send_message(vector<client_info> &clients, char *command_
     }
     else
     {
+        printf("ERRORRRRRRRRRRRR!!!!!!!!!!!!\n\n\n\n\n");
         write(client_socket_fd, ERR_COMMAND, strlen(ERR_COMMAND));
+        printf("ERROR writing complete.\n\n\n\n\n");
     }
 }
 
@@ -369,6 +392,11 @@ int main(int argc, char **argv)
                         {
                             int n = read(clients[i].socket_fd, command_from_client, MAXLINE);
                             command_from_client[n] = 0;
+                            if(n == 0)//this user is offline
+                            {
+                                clear_offline_user(clients, clients[i].socket_fd);
+                                break;   
+                            }
                             
                             printf("client %d's command: %s", clients[i].socket_fd, command_from_client);
 
