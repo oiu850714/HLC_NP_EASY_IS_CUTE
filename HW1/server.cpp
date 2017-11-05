@@ -27,6 +27,7 @@
 #define USER_NOT_EXIST "[Server] ERROR: The receiver doesn't exist.\n"
 #define NAME_NOT_2to12_ENG "[Server] ERROR: Username can only consists of 2~12 English letters.\n"
 #define NEW_NAME_ANONYMOUS "[Server] ERROR: Username cannot be anonymous.\n"
+#define ERR_COMMAND "[Server] ERROR: Error command.\n"
 using std::string;
 using std::vector;
 using std::max;
@@ -153,9 +154,9 @@ void parse_command_and_send_message(vector<client_info> &clients, char *command_
     {
         string yell_arg;
         string temp_arg;
-        while(SS)
+        while(SS >> temp_arg)
         {
-            SS >> temp_arg;
+            //SS >> temp_arg;
             yell_arg += temp_arg + " ";
         }
 
@@ -204,16 +205,16 @@ void parse_command_and_send_message(vector<client_info> &clients, char *command_
             write(client_socket_fd, SUCCESS_MSG, strlen(SUCCESS_MSG));
             string tell_arg;
             string temp_arg;
-            while(SS)
+            while(SS >> temp_arg)
             {
-                SS >> temp_arg;
+                //SS >> temp_arg;
                 tell_arg += temp_arg + " ";
             }
             string tell_msg;
             tell_msg += "[Server] ";
             tell_msg += find_user_name_by_sockfd(clients, client_socket_fd) + " ";
             tell_msg += "tell you ";
-            tell_msg += tell_arg;
+            tell_msg += tell_arg + "\n";
             write(user_want_to_tell_sockfd, tell_msg.c_str(), tell_msg.size());
         }
     }
@@ -275,7 +276,7 @@ void parse_command_and_send_message(vector<client_info> &clients, char *command_
     }
     else
     {
-        write(client_socket_fd, "ERROR!!!!!\n", strlen("ERROR!!!!!\n"));
+        write(client_socket_fd, ERR_COMMAND, strlen(ERR_COMMAND));
     }
 }
 
@@ -373,7 +374,7 @@ int main(int argc, char **argv)
 
                             parse_command_and_send_message(clients, command_from_client, clients[i].socket_fd);
 
-                            write(clients[i].socket_fd, SERVER_PROMPT, strlen(SERVER_PROMPT));
+                            //write(clients[i].socket_fd, SERVER_PROMPT, strlen(SERVER_PROMPT));
                         }
                     }
                 } 
