@@ -130,6 +130,8 @@ void parse_command_and_send_message(vector<client_info> &clients, char *command_
     std::cout << "command's content: " << SS.str() << "\n";
     if(SS.str() == "\n") // THE user just type a fucking enter
         return;
+    if(SS.str() == "\r\n") //Fuck you windows
+        return;
 
     string command;
     SS >> command;
