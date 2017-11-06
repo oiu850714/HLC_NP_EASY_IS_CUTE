@@ -1,4 +1,8 @@
 
+
+#ifndef STRING_CONSTANT
+#define STRING_CONSTANT
+
 #define MAXLINE 2000
 #define SERVERCOUNT 1
 #define SERVER_PROMPT "[Server]"
@@ -11,3 +15,5 @@
 #define NAME_NOT_2to12_ENG "[Server] ERROR: Username can only consists of 2~12 English letters.\n"
 #define NEW_NAME_ANONYMOUS "[Server] ERROR: Username cannot be anonymous.\n"
 #define ERR_COMMAND "[Server] ERROR: Error command.\n"
+
+#endif
