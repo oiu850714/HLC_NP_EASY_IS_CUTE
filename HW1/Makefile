@@ -1,3 +1,8 @@
+all: client server
+
+client: client.cpp
+	g++ client.cpp -o client -std=c++14
+
 server: server.o functionUtil.o
 	g++ functionUtil.o server.o -o server -std=c++14
 
