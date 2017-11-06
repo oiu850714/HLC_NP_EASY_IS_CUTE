@@ -8,4 +8,4 @@ server.o: server.cpp
 	g++ server.cpp -c -o server.o -std=c++14
 
 clean:
-	rm -f *.o *.exe
+	rm -f *.o *.exe client server
