@@ -14,6 +14,7 @@
 #include <sstream>
 #include <cctype>
 
+#include "stringConstant.h"
 #include "defineStruct.h"
 #include "functionUtil.h"
 
