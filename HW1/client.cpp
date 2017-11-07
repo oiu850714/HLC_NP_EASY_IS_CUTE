@@ -46,7 +46,7 @@ int main(int argc, char ** argv)
     addrinfo *result;
 
     int status;
-    if (status = getaddrinfo(argv[1], NULL, &hints, &result) != 0)
+    if (status = getaddrinfo(argv[1], argv[2], &hints, &result) != 0)
     {
         fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
         return 2;
@@ -55,12 +55,14 @@ int main(int argc, char ** argv)
 
     
 
+    /*
     struct sockaddr_in server_addr;
+    DON'T USE BZERO???????????????
     bzero(&server_addr, sizeof(server_addr));
     server_addr = *(struct sockaddr_in *)(result->ai_addr); // first sockaddr_in ?
     server_addr.sin_family = AF_INET;
     server_addr.sin_port =  htons(atoi(argv[2]));
-
+    */
     /*
     if(!inet_pton(AF_INET, argv[1], &server_addr.sin_addr.s_addr))
     {
@@ -69,7 +71,15 @@ int main(int argc, char ** argv)
     }
     */
 
+    /*
     if (connect(socket_fd, (sockaddr *) &server_addr, sizeof(server_addr)) < 0)
+    {
+        printf("connect error\n");
+        exit(1);
+    }
+    */
+
+    if (connect(socket_fd, result->ai_addr, sizeof(server_addr)) < 0)
     {
         printf("connect error\n");
         exit(1);
