@@ -3,3 +3,5 @@
 client
 server
 *.nfs*
+showip.cpp
+showip

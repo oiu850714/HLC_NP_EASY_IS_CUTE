@@ -8,6 +8,7 @@
 #include <unistd.h>
 #include <string>
 #include <sys/select.h>
+#include <netdb.h>
 
 #define MAXLINE 2000
 //int initialize_socket(char *ip_str, char *port_str,
@@ -33,16 +34,40 @@ int main(int argc, char ** argv)
         exit(1);
     }
 
+
+    addrinfo hints;
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_protocol = 0;
+    hints.ai_addrlen = 0;
+    hints.ai_canonname = NULL;
+    hints.ai_addr = NULL;
+    hints.ai_next = NULL;
+    addrinfo *result;
+
+    int status;
+    if (status = getaddrinfo(argv[1], NULL, &hints, &result) != 0)
+    {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(status));
+        return 2;
+    }
+
+
+    
+
     struct sockaddr_in server_addr;
     bzero(&server_addr, sizeof(server_addr));
+    server_addr = *(struct sockaddr_in *)(result->ai_addr); // first sockaddr_in ?
     server_addr.sin_family = AF_INET;
     server_addr.sin_port =  htons(atoi(argv[2]));
 
+    /*
     if(!inet_pton(AF_INET, argv[1], &server_addr.sin_addr.s_addr))
     {
         printf("fuckyou invalid IP address\n");
         exit(1);
     }
+    */
 
     if (connect(socket_fd, (sockaddr *) &server_addr, sizeof(server_addr)) < 0)
     {
