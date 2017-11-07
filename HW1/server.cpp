@@ -42,7 +42,8 @@ int main(int argc, char **argv)
 
     //bind socket
     sockaddr_in server_ip_port;
-    bzero(&server_ip_port, sizeof(server_ip_port));
+    //bzero(&server_ip_port, sizeof(server_ip_port));
+    memset(&server_ip_port, 0, sizeof(server_ip_port));
     server_ip_port.sin_family = AF_INET;
     server_ip_port.sin_port = htons(atoi(argv[1]));
     server_ip_port.sin_addr.s_addr = htonl(INADDR_ANY);

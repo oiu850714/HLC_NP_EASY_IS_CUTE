@@ -79,7 +79,7 @@ int main(int argc, char ** argv)
     }
     */
 
-    if (connect(socket_fd, result->ai_addr, sizeof(server_addr)) < 0)
+    if (connect(socket_fd, result->ai_addr, sizeof(sockaddr_in)) < 0)
     {
         printf("connect error\n");
         exit(1);
