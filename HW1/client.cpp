@@ -141,6 +141,12 @@ int main(int argc, char ** argv)
                             return 0;
                         }
                     }
+                    else if(n == 0)
+                    {
+                        printf("server closed.\n");
+                        close(socket_fd);
+                        return 0;
+                    }
                 }
                 break;
         }
