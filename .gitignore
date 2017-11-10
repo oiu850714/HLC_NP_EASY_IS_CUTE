@@ -5,3 +5,4 @@ server
 *.nfs*
 showip.cpp
 showip
+*.vscode*
