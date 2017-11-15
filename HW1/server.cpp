@@ -54,7 +54,7 @@ int main(int argc, char **argv)
     }
 
     //listen socket
-    listen(server_socket_fd, 15);
+    listen(server_socket_fd, 100);
     
     vector<client_info> clients;
     //store all clients' information
@@ -82,7 +82,7 @@ int main(int argc, char **argv)
         
         int maxfdp = max(max_fd(clients), server_socket_fd);
 
-        switch(select(maxfdp + 1, &reading_fds, NULL, NULL, &tv))
+        switch(select(maxfdp + 1, &reading_fds, NULL, NULL, NULL))
         {
             case -1:
                 printf("select error\n");
