@@ -19,7 +19,16 @@ using std::to_string;
 using std::string;
 using std::cout;
 
-#define MAXLINE 2000
+#define MAXLINE 2004
+
+struct reliable_packet
+{
+    uint32_t FIN;
+    uint32_t SYN;
+    uint32_t seq_num;
+    uint32_t payload_len;
+    char payload[MAXLINE];
+};
 
 int Socket(int family, int sock_type, int protocol)
 {
@@ -96,12 +105,41 @@ int select_routine(int socket_fd, fd_set &reading_fds)
 
 void reliable_receive_packet(int socket_fd, char* local_file_buffer, char* remote_receive_buffer, uint32_t seq_num, ssize_t num_read)
 {
+    /*
     local_file_buffer[num_read] = '\0';
     string add_seq_payload(to_string(seq_num));
     add_seq_payload += "\n";
     add_seq_payload += local_file_buffer;
     cout << "send packet's content:\n" << add_seq_payload;
-    write(socket_fd, add_seq_payload.c_str(), add_seq_payload.size());
+    */
+
+    char whole_packet[MAXLINE];
+    int offset = 0;
+    //initialize whole packet buffer
+    
+    size_t len_of_seq_num = to_string(seq_num).size();
+    strncpy(whole_packet + offset, to_string(seq_num).c_str(), len_of_seq_num);
+    //copy "seq_num" to whole packet buffer 
+    
+    offset += len_of_seq_num;
+    whole_packet[offset] = '\n';
+    offset += 1;
+    //copy '\n'
+    
+    size_t len_of_num_read = to_string(num_read).size();
+    strncpy(whole_packet + offset, to_string(num_read).c_str(), len_of_num_read);
+    //copy "num_read" to whole packet buffer 
+
+
+    offset += len_of_num_read;
+    whole_packet[offset] = '\n';
+    offset += 1;
+    //copy '\n'
+
+    strncpy(whole_packet + offset, local_file_buffer, num_read);
+    offset += num_read;
+
+    write(socket_fd, whole_packet, offset);
     while(true)
     {
         fd_set reading_fds;
@@ -113,8 +151,8 @@ void reliable_receive_packet(int socket_fd, char* local_file_buffer, char* remot
                 break;
             case 0:
                 printf("socket timeout\n");
-                cout << "send packet's content:\n" << add_seq_payload;
-                write(socket_fd, add_seq_payload.c_str(), add_seq_payload.size());
+                cout << "send packet's content:\n" << whole_packet;
+                write(socket_fd, whole_packet, offset);
                 break;
             default:
                 if(FD_ISSET(socket_fd, &reading_fds))

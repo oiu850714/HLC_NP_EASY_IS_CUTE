@@ -1,8 +1,8 @@
 cli: 
 packet 0:
-    "0" + "\n" + "filename" + "\n"
+    "0" + "\n" + "0" + "\n" + "filename" + "\n"
 packet 1 ~ (file size)/best_udp_seg_size + 1:
-    "pack_num" + "\n" + payload
+    "pack_num" + "\n" + "payload len" + "\n" + payload
 last packet:
     "INT64_MAX" + "\n"
 

@@ -5,7 +5,7 @@
 #include <sstream>
 #include <iostream>
 
-#define MAXLINE 2000
+#define MAXLINE 2004
 #define MAX_UDP_SIZE 100
 //int initialize_socket(char *ip_str, char *port_str,
 /* value-result arg*/ //int *socket_fd, struct *sockaddr_in sock_struct);
@@ -28,7 +28,7 @@ int main(int argc, char ** argv)
     int socket_fd = create_working_udp_socket_client(argv[1], argv[2], server_addr);
     //what it does: create, translate command line IP and port, connect
 
-    FILE *fp = Fopen(argv[3], "r");
+    FILE *fp = Fopen(argv[3], "rb");
     //FILE *fp_copy = Fopen("copy.txt", "w");
     ssize_t num_read;
 
@@ -41,7 +41,7 @@ int main(int argc, char ** argv)
     uint32_t seq_num = 0;
 
     string first_packet_content;
-    first_packet_content += to_string(seq_num) + "\n" + argv[3] + "\n";
+    first_packet_content += to_string(seq_num) + "\n" + "0" + "\n" + argv[3] + "\n";
     write(socket_fd, first_packet_content.c_str(), first_packet_content.size());
     cout << "send packet's content:\n" << first_packet_content;
     //reliable_receive_packet(socket_fd, local_file_buffer, sendto_remote_buffer, seq_num, num_read);
