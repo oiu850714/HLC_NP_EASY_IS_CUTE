@@ -15,7 +15,8 @@
 #ifndef UDP_SOCKUTIL
 #define UDP_SOCKUTIL
 
-#define MAXLINE 1452
+#define MAXLINE 41452
+#define PACKET_SIZE sizeof(reliable_packet)
 
 struct reliable_packet
 {

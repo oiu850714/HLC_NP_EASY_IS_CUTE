@@ -5,10 +5,7 @@
 #include <sstream>
 #include <iostream>
 
-#define MAXLINE 1452
 // 1500 -28 - sizeof(SYN + FIN + ACK + seq_num)
-
-#define PACKET_SIZE sizeof(reliable_packet)
 
 #define MAX_UDP_SIZE 100
 //int initialize_socket(char *ip_str, char *port_str,

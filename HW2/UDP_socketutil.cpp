@@ -19,10 +19,8 @@ using std::to_string;
 using std::string;
 using std::cout;
 
-#define MAXLINE 1452
 // 1500 -28 - sizeof(SYN + FIN + ACK + seq_num)
 
-#define PACKET_SIZE sizeof(reliable_packet)
 
 
 reliable_packet::reliable_packet()
