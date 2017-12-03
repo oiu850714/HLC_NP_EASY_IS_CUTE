@@ -43,6 +43,7 @@ int main(int argc, char **argv)
         printf("received!\n");
         stringstream SS;
         SS << local_file_buffer;
+        // ABOVE LINE MAY HAVE PROBLEM IN BINARY FILE
         int seq_num;
         char eat_newline;
         SS >> seq_num;
