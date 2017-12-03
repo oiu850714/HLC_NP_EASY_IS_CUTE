@@ -15,9 +15,24 @@
 #ifndef UDP_SOCKUTIL
 #define UDP_SOCKUTIL
 
+#define MAXLINE 1452
+
+struct reliable_packet
+{
+    uint32_t SYN;
+    uint32_t FIN;
+    uint32_t ACK;
+    uint32_t seq_num;
+    uint32_t payload_len;
+    char payload[MAXLINE];
+
+    reliable_packet();
+    reliable_packet(uint32_t SYN, uint32_t FIN, uint32_t ACK, uint32_t seq_num);
+};
+
 
 int create_working_udp_socket_client(char *IP_str, char *Port_str, struct sockaddr_in &server_addr);
 int create_working_udp_socket_server(char *Port_str, struct sockaddr_in &server_ip_port);
-void reliable_receive_packet(int socket_fd, char* local_file_buffer, char* remote_receive_buffer, uint32_t seq_num, ssize_t num_read);
+void reliable_receive_packet(int socket_fd, char* local_file_buffer, uint32_t seq_num, ssize_t num_read, uint32_t SYN, uint32_t FIN);
 int select_routine(int socket_fd, fd_set &reading_fds);
 #endif

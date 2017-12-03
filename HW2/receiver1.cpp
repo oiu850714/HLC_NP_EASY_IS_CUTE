@@ -5,7 +5,12 @@
 #include <sstream>
 #include <iostream>
 
-#define MAXLINE 2004
+#define MAXLINE 1452
+// 1500 -28 - sizeof(SYN + FIN + ACK + seq_num)
+
+
+#define PACKET_SIZE 1472
+
 #define MAX_UDP_SIZE 100
 
 
@@ -13,6 +18,7 @@ using std::string;
 using std::stringstream;
 using std::cout;
 using std::to_string;
+
 
 int main(int argc, char **argv)
 {
@@ -24,74 +30,66 @@ int main(int argc, char **argv)
 
     struct sockaddr_in server_ip_port;
     int server_fd = create_working_udp_socket_server(argv[1], server_ip_port);
-    //what it does: create, bind
+    //what it does: create, bind, arg_2 is reference
 
-    ssize_t recv_num;
-    char local_file_buffer[MAXLINE];
-    char remote_receive_buffer[MAXLINE];
-    FILE* fp = NULL;
 
     sockaddr_in client_addr;
     memset(&client_addr, 0, sizeof(client_addr));
     socklen_t addrlen;
+    //client_addr get client's info by passing to recvfrom
+
+
+    ssize_t recv_num;
+    FILE* fp_copy_to_receiver = NULL;
 
     uint32_t cur_seq_num = 0;
-    while(recv_num = recvfrom(server_fd, local_file_buffer, MAXLINE, 0,(sockaddr *) &client_addr, &addrlen))
+    struct reliable_packet recv_packet;
+    while(recv_num = recvfrom(server_fd, &recv_packet, PACKET_SIZE, 0,(sockaddr *) &client_addr, &addrlen))
     {
-        local_file_buffer[recv_num] = '\0';
-        //printf("%s\n", local_file_buffer);
-
+        //recv_packet[recv_num] = '\0';
+        //printf("%s\n", recv_packet);
         printf("received!\n");
-        stringstream SS;
-        string whole_packet_str(local_file_buffer, recv_num);
-        SS << local_file_buffer;
-        // ABOVE LINE MAY HAVE PROBLEM IN BINARY FILE
-        int seq_num;
-        char eat_newline;
-        SS >> seq_num;
-        SS.get(eat_newline);
-        //SS >> eat_newline;
-
-        int pay_load_size;
-        SS >> pay_load_size;
-        SS.get(eat_newline);
         
-        int len_of_seq_num = to_string(seq_num).size();
-        int len_of_pay_load_size = to_string(pay_load_size).size();
-
-        string content;
+        uint32_t SYN = ntohl(recv_packet.SYN);
+        uint32_t ACK = ntohl(recv_packet.ACK);
+        uint32_t FIN = ntohl(recv_packet.FIN);
+        uint32_t seq_num = ntohl(recv_packet.seq_num);
+        uint32_t payload_len = ntohl(recv_packet.payload_len);
         
-        char just_char;
-        while(SS.get(just_char))
+        cout << "SYN: " << SYN << "\n";
+        cout << "ACK: " << ACK << "\n";
+        cout << "FIN: " << FIN << "\n";
+        cout << "seq_num:" << seq_num << "\n";
+        cout << "payload_len: " << payload_len << "\n";
+        
+        if(seq_num == 0 && SYN == 1 && fp_copy_to_receiver == NULL)// only open file once
         {
-            if( !(seq_num == 0 && just_char == '\n')) // to avoid add newline in file name
-                content += just_char;
-        }
-        
-        cout << "seq_num: " << seq_num << "\n";
-        cout << "pay_load_size: " << pay_load_size << "\n";
-        cout << "content:\n" << content << "\n";
-        cout << "fp: " << fp << "\n";
-        //cout << "content:\n" << content << "\n";
-        if(seq_num == 0 && fp == NULL)// only open file once
-        {
-            //if fp != NULL, that means first packet containing file name has been received
+            //if fp_copy_to_receiver != NULL, that means first packet containing file name has been received
             //so don't open file again
             cout << "open file!!\n";
-            fp = Fopen(content.c_str(), "wb");
-            cur_seq_num += 1;
+            fp_copy_to_receiver = Fopen(recv_packet.payload, "wb");
+            //now recv_packet.payload is null terminated string, so fopen is safe
+            //cur_seq_num += 1;
+            cur_seq_num = 1;
+            // new client, reset cur_seq_num = 1
+        }
+        else if(FIN == 1 && fp_copy_to_receiver != NULL)
+        {
+            fclose(fp_copy_to_receiver);
+            fp_copy_to_receiver = NULL;
         }
         else if(cur_seq_num == seq_num)
         {   
             cout << "cur_seq_num: " << cur_seq_num << "\n";
             //cout << "content written to file:\n" << content; 
-            fwrite(local_file_buffer + len_of_seq_num + 1 + len_of_pay_load_size + 1
-                    //                                newline                    newline
-                    , 1, recv_num - len_of_seq_num - 1 - len_of_pay_load_size - 1, fp);
+            fwrite(recv_packet.payload, 1, payload_len, fp_copy_to_receiver) ;
             cur_seq_num += 1;
         }
-        string ack_packet(to_string(cur_seq_num));
-        ack_packet += "\n";
-        sendto(server_fd, ack_packet.c_str(), ack_packet.size(), 0, (sockaddr *) &client_addr, sizeof(client_addr));
+        
+        struct reliable_packet 
+            ack_packet(htonl(0), htonl(0), htonl(1), htonl((uint32_t)cur_seq_num));
+        ack_packet.payload_len = htonl(0);
+        ack_packet.payload[0] = '\0';
+        sendto(server_fd, &ack_packet, PACKET_SIZE, 0, (sockaddr *) &client_addr, sizeof(client_addr));
     }
 }

@@ -19,16 +19,21 @@ using std::to_string;
 using std::string;
 using std::cout;
 
-#define MAXLINE 2004
+#define MAXLINE 1452
+// 1500 -28 - sizeof(SYN + FIN + ACK + seq_num)
 
-struct reliable_packet
+#define PACKET_SIZE sizeof(reliable_packet)
+
+
+reliable_packet::reliable_packet()
 {
-    uint32_t FIN;
-    uint32_t SYN;
-    uint32_t seq_num;
-    uint32_t payload_len;
-    char payload[MAXLINE];
-};
+    FIN = 0; SYN = 0; ACK = 0; seq_num = 0; payload_len = 0;
+}
+
+reliable_packet::reliable_packet(uint32_t SYN, uint32_t FIN, uint32_t ACK, uint32_t seq_num)
+{
+    this->FIN = FIN; this->SYN = SYN; this->ACK = ACK; this->seq_num = seq_num;
+}
 
 int Socket(int family, int sock_type, int protocol)
 {
@@ -103,43 +108,22 @@ int select_routine(int socket_fd, fd_set &reading_fds)
 }
 
 
-void reliable_receive_packet(int socket_fd, char* local_file_buffer, char* remote_receive_buffer, uint32_t seq_num, ssize_t num_read)
+void reliable_receive_packet(int socket_fd, char* local_file_buffer, uint32_t seq_num, ssize_t num_read, uint32_t SYN, uint32_t FIN)
 {
-    /*
-    local_file_buffer[num_read] = '\0';
-    string add_seq_payload(to_string(seq_num));
-    add_seq_payload += "\n";
-    add_seq_payload += local_file_buffer;
-    cout << "send packet's content:\n" << add_seq_payload;
-    */
+    struct reliable_packet send_packet;
 
-    char whole_packet[MAXLINE];
-    int offset = 0;
-    //initialize whole packet buffer
+    if(SYN == 1)
+        send_packet = reliable_packet(htonl(1), htonl(0), htonl(0), htonl(seq_num));
+    else if(FIN == 1)                //  SYN       FIN       ACK
+        send_packet = reliable_packet(htonl(0), htonl(1), htonl(0), htonl(seq_num));
+    else
+        send_packet = reliable_packet(htonl(0), htonl(0), htonl(0), htonl(seq_num));
     
-    size_t len_of_seq_num = to_string(seq_num).size();
-    strncpy(whole_packet + offset, to_string(seq_num).c_str(), len_of_seq_num);
-    //copy "seq_num" to whole packet buffer 
-    
-    offset += len_of_seq_num;
-    whole_packet[offset] = '\n';
-    offset += 1;
-    //copy '\n'
-    
-    size_t len_of_num_read = to_string(num_read).size();
-    strncpy(whole_packet + offset, to_string(num_read).c_str(), len_of_num_read);
-    //copy "num_read" to whole packet buffer 
+    send_packet.payload_len = htonl( (uint32_t)num_read);
+    if(FIN == 0)
+        memcpy(send_packet.payload, local_file_buffer, num_read);
 
-
-    offset += len_of_num_read;
-    whole_packet[offset] = '\n';
-    offset += 1;
-    //copy '\n'
-
-    strncpy(whole_packet + offset, local_file_buffer, num_read);
-    offset += num_read;
-
-    write(socket_fd, whole_packet, offset);
+    write(socket_fd, &send_packet, PACKET_SIZE);
     while(true)
     {
         fd_set reading_fds;
@@ -151,19 +135,17 @@ void reliable_receive_packet(int socket_fd, char* local_file_buffer, char* remot
                 break;
             case 0:
                 printf("socket timeout\n");
-                cout << "send packet's content:\n" << whole_packet;
-                write(socket_fd, whole_packet, offset);
+                //cout << "send packet's content:\n" << whole_packet;
+                write(socket_fd, &send_packet, PACKET_SIZE);
                 break;
             default:
                 if(FD_ISSET(socket_fd, &reading_fds))
                 {
                     printf("received other side's reply!\n");
-                    int n = read(socket_fd, local_file_buffer, MAXLINE);
-                    stringstream SS;
-                    SS << local_file_buffer;
-                    int receive_seq_num;
-                    SS >> receive_seq_num;
-                    if (receive_seq_num > seq_num)
+                    struct reliable_packet recv_packet;
+                    int n = read(socket_fd, &recv_packet, PACKET_SIZE);
+
+                    if (ntohl(recv_packet.seq_num) > seq_num)
                     {
                         //it's important that receive_seq_num > seq_num
                         //that means receiver receives "latest" packet correctly

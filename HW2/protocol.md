@@ -1,19 +1,35 @@
+both use reliable_packet to communicate:
+
+struct reliable_packet
+{
+    uint32_t SYN;
+    uint32_t FIN;
+    uint32_t ACK;
+    uint32_t seq_num;
+    uint32_t payload_len;
+    char payload[MAXLINE];
+
+    reliable_packet();
+    reliable_packet(uint32_t SYN, uint32_t FIN, uint32_t ACK, uint32_t seq_num);
+};
+
+
 cli: 
 packet 0:
-    "0" + "\n" + "0" + "\n" + "filename" + "\n"
-packet 1 ~ (file size)/best_udp_seg_size + 1:
-    "pack_num" + "\n" + "payload len" + "\n" + payload
+    SYN = 1, FIN = 0, ACK = 0, seq_num = 0, payload_len = strlen(file_name), payload = file_name
+packet i from 1 to (file size)/best_udp_seg_size + 1:
+    SYN = 0, FIN = 0, ACK = 0, seq_num = i, payload_len = num_read, payload = file content
 last packet:
-    "INT64_MAX" + "\n"
+    SYN = 0, FIN = 1, ACK = 0, seq_num = last i, payload_len = 0, payload = empty
 
 
 serv:
 packet 0:
-    "pack_num + 1"(in this case, 1) + "\n"
-packet 1 ~ (file size)/best_udp_seg_size + 1:
-    "pack_num + 1" + "\n"
+    SYN = 1, FIN = 0, ACK = 1, seq_num = 1, payload_len = 0, payload = empty
+packet i from 1 to (file size)/best_udp_seg_size + 1:
+    SYN = 0, FIN = 0, ACK = 1, seq_num = i + 1, payload_len = 0, payload = empty
 last packet:
-    "Bye!\n"
+    SYN = 0, FIN = 0, ACK = 1, seq_num = i + 1, rest = 0
 
 timeout:
     stop_and_wait LOL
