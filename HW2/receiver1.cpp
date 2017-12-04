@@ -32,7 +32,7 @@ int main(int argc, char **argv)
 
     sockaddr_in client_addr;
     memset(&client_addr, 0, sizeof(client_addr));
-    socklen_t addrlen;
+    socklen_t addrlen = sizeof(client_addr);
     //client_addr get client's info by passing to recvfrom
 
 
