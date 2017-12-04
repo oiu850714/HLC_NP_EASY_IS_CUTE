@@ -107,10 +107,8 @@ int select_routine(int socket_fd, fd_set &reading_fds)
 }
 
 
-void reliable_receive_packet_select(int socket_fd, char* local_file_buffer, uint32_t seq_num, ssize_t num_read, uint32_t SYN, uint32_t FIN)
+void initialize_send_packet(char* local_file_buffer, uint32_t seq_num, ssize_t num_read, uint32_t SYN, uint32_t FIN, struct reliable_packet &send_packet)
 {
-    struct reliable_packet send_packet;
-
     if(SYN == 1)
         send_packet = reliable_packet(htonl(1), htonl(0), htonl(0), htonl(seq_num));
     else if(FIN == 1)                //  SYN       FIN       ACK
@@ -121,6 +119,12 @@ void reliable_receive_packet_select(int socket_fd, char* local_file_buffer, uint
     send_packet.payload_len = htonl( (uint32_t)num_read);
     if(FIN == 0)
         memcpy(send_packet.payload, local_file_buffer, num_read);
+}
+
+void reliable_receive_packet_select(int socket_fd, char* local_file_buffer, uint32_t seq_num, ssize_t num_read, uint32_t SYN, uint32_t FIN)
+{
+    struct reliable_packet send_packet;
+    initialize_send_packet(local_file_buffer, seq_num, num_read, SYN, FIN, send_packet);
 
     write(socket_fd, &send_packet, PACKET_SIZE);
     while(true)
@@ -167,20 +171,7 @@ void sig_alrm(int)
 void reliable_receive_packet_alarm(int socket_fd, char* local_file_buffer, uint32_t seq_num, ssize_t num_read, uint32_t SYN, uint32_t FIN)
 {
     struct reliable_packet send_packet;
-
-    if(SYN == 1)
-        send_packet = reliable_packet(htonl(1), htonl(0), htonl(0), htonl(seq_num));
-    else if(FIN == 1)                //  SYN       FIN       ACK
-        send_packet = reliable_packet(htonl(0), htonl(1), htonl(0), htonl(seq_num));
-    else
-        send_packet = reliable_packet(htonl(0), htonl(0), htonl(0), htonl(seq_num));
-    
-    send_packet.payload_len = htonl( (uint32_t)num_read);
-    if(FIN == 0)
-        memcpy(send_packet.payload, local_file_buffer, num_read);
-
-
-    //signal(SIGALRM, sig_alrm);
+    initialize_send_packet(local_file_buffer, seq_num, num_read, SYN, FIN, send_packet);
 
     while(true)
     {
@@ -220,18 +211,7 @@ void reliable_receive_packet_alarm(int socket_fd, char* local_file_buffer, uint3
 void reliable_receive_packet_socket_option(int socket_fd, char* local_file_buffer, uint32_t seq_num, ssize_t num_read, uint32_t SYN, uint32_t FIN)
 {
     struct reliable_packet send_packet;
-
-    if(SYN == 1)
-        send_packet = reliable_packet(htonl(1), htonl(0), htonl(0), htonl(seq_num));
-    else if(FIN == 1)                //  SYN       FIN       ACK
-        send_packet = reliable_packet(htonl(0), htonl(1), htonl(0), htonl(seq_num));
-    else
-        send_packet = reliable_packet(htonl(0), htonl(0), htonl(0), htonl(seq_num));
-    
-    send_packet.payload_len = htonl( (uint32_t)num_read);
-    if(FIN == 0)
-        memcpy(send_packet.payload, local_file_buffer, num_read);
-
+    initialize_send_packet(local_file_buffer, seq_num, num_read, SYN, FIN, send_packet);
     
     //method3 socket timeout option
     struct timeval tv;
@@ -245,7 +225,7 @@ void reliable_receive_packet_socket_option(int socket_fd, char* local_file_buffe
         struct reliable_packet recv_packet;
         int n;
         write(socket_fd, &send_packet, PACKET_SIZE);
-        
+
         if( (n = read(socket_fd, &recv_packet, PACKET_SIZE)) < 0)
         {
             if(errno == EWOULDBLOCK)
@@ -269,39 +249,4 @@ void reliable_receive_packet_socket_option(int socket_fd, char* local_file_buffe
             return;
         }
     }
-
-    /*
-    while(true)
-    {
-        fd_set reading_fds;
-        switch(select_routine(socket_fd, reading_fds))
-        {
-            case -1:
-                printf("select error\n");
-                exit(1);
-                break;
-            case 0:
-                printf("socket timeout\n");
-                //cout << "send packet's content:\n" << whole_packet;
-                write(socket_fd, &send_packet, PACKET_SIZE);
-                break;
-            default:
-                if(FD_ISSET(socket_fd, &reading_fds))
-                {
-                    printf("received other side's reply!\n");
-                    struct reliable_packet recv_packet;
-                    int n = read(socket_fd, &recv_packet, PACKET_SIZE);
-
-                    if (ntohl(recv_packet.seq_num) > seq_num)
-                    {
-                        //it's important that receive_seq_num > seq_num
-                        //that means receiver receives "latest" packet correctly
-                        printf("other side receive latest packet!!\n");
-                        return;
-                    }
-                }
-                break;
-        }
-    }
-    */
 }
