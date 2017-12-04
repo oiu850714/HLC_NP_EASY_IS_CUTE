@@ -10,6 +10,7 @@
 #include <string>
 #include <sys/select.h>
 #include <netdb.h>
+#include <signal.h>
 
 
 #ifndef UDP_SOCKUTIL
@@ -34,6 +35,13 @@ struct reliable_packet
 
 int create_working_udp_socket_client(char *IP_str, char *Port_str, struct sockaddr_in &server_addr);
 int create_working_udp_socket_server(char *Port_str, struct sockaddr_in &server_ip_port);
-void reliable_receive_packet(int socket_fd, char* local_file_buffer, uint32_t seq_num, ssize_t num_read, uint32_t SYN, uint32_t FIN);
+
+
+void reliable_receive_packet_select(int socket_fd, char* local_file_buffer, uint32_t seq_num, ssize_t num_read, uint32_t SYN, uint32_t FIN);
+void reliable_receive_packet_alarm(int socket_fd, char* local_file_buffer, uint32_t seq_num, ssize_t num_read, uint32_t SYN, uint32_t FIN);
+void reliable_receive_packet_socket_option(int socket_fd, char* local_file_buffer, uint32_t seq_num, ssize_t num_read, uint32_t SYN, uint32_t FIN);
+
 int select_routine(int socket_fd, fd_set &reading_fds);
+
+void sig_alrm(int);//sender2 alarm method
 #endif

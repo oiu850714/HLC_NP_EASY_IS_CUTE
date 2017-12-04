@@ -85,7 +85,7 @@ int main(int argc, char ** argv)
     }
     */
 
-    reliable_receive_packet(socket_fd, argv[3], seq_num, strlen(argv[3]), 1, 0);
+    reliable_receive_packet_select(socket_fd, argv[3], seq_num, strlen(argv[3]), 1, 0);
     //first packet                                                      SYN FIN
     seq_num++;
 
@@ -93,13 +93,13 @@ int main(int argc, char ** argv)
     ssize_t num_read;
     while(num_read = fread(local_file_buffer, 1, MAXLINE, fp))
     {
-        reliable_receive_packet(socket_fd, local_file_buffer, seq_num, num_read, 0, 0);
+        reliable_receive_packet_select(socket_fd, local_file_buffer, seq_num, num_read, 0, 0);
         seq_num++;
     }
 
     //struct reliable_packet last_packet(htonl(0), htonl(1), htonl(0), htonl(0));
     
-    reliable_receive_packet(socket_fd, NULL, seq_num, 0, 0, 1);
+    reliable_receive_packet_select(socket_fd, NULL, seq_num, 0, 0, 1);
 
     //write(socket_fd, reliable_packet, PACKET_SIZE);
     printf("write comp\n");
