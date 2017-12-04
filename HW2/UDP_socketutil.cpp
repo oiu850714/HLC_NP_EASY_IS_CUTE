@@ -214,38 +214,6 @@ void reliable_receive_packet_alarm(int socket_fd, char* local_file_buffer, uint3
                 return;
             }
         }
-
-        /*
-        fd_set reading_fds;
-        switch(select_routine(socket_fd, reading_fds))
-        {
-            case -1:
-                printf("select error\n");
-                exit(1);
-                break;
-            case 0:
-                printf("socket timeout\n");
-                //cout << "send packet's content:\n" << whole_packet;
-                write(socket_fd, &send_packet, PACKET_SIZE);
-                break;
-            default:
-                if(FD_ISSET(socket_fd, &reading_fds))
-                {
-                    printf("received other side's reply!\n");
-                    struct reliable_packet recv_packet;
-                    int n = read(socket_fd, &recv_packet, PACKET_SIZE);
-
-                    if (ntohl(recv_packet.seq_num) > seq_num)
-                    {
-                        //it's important that receive_seq_num > seq_num
-                        //that means receiver receives "latest" packet correctly
-                        printf("other side receive latest packet!!\n");
-                        return;
-                    }
-                }
-                break;
-        }
-        */
     }
 }
 
@@ -264,7 +232,45 @@ void reliable_receive_packet_socket_option(int socket_fd, char* local_file_buffe
     if(FIN == 0)
         memcpy(send_packet.payload, local_file_buffer, num_read);
 
-    write(socket_fd, &send_packet, PACKET_SIZE);
+    
+    //method3 socket timeout option
+    struct timeval tv;
+    tv.tv_sec = 0;
+    tv.tv_usec = 300000;
+    setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+
+    
+    while(true)
+    {
+        struct reliable_packet recv_packet;
+        int n;
+        write(socket_fd, &send_packet, PACKET_SIZE);
+        
+        if( (n = read(socket_fd, &recv_packet, PACKET_SIZE)) < 0)
+        {
+            if(errno == EWOULDBLOCK)
+            {
+                printf("socket timeout\n");
+                continue;
+            }
+            else
+            {
+                printf("socket read error\n");
+                exit(1);
+            }
+        }
+
+        printf("received other side's reply!\n");
+        if (ntohl(recv_packet.seq_num) > seq_num)
+        {
+            //it's important that receive_seq_num > seq_num
+            //that means receiver receives "latest" packet correctly
+            printf("other side receive latest packet!!\n");
+            return;
+        }
+    }
+
+    /*
     while(true)
     {
         fd_set reading_fds;
@@ -297,4 +303,5 @@ void reliable_receive_packet_socket_option(int socket_fd, char* local_file_buffe
                 break;
         }
     }
+    */
 }

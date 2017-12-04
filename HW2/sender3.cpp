@@ -36,6 +36,9 @@ int main(int argc, char ** argv)
     printf("file size: %ld\n", file_size);
     //get file size
     
+    //method3 socket timeout option
+    
+
     uint32_t seq_num = 0;
 
     reliable_receive_packet_socket_option(socket_fd, argv[3], seq_num, strlen(argv[3]), 1, 0);
