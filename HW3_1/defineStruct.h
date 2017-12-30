@@ -105,15 +105,29 @@ struct connection
         this->remain_packet_len = conn.remain_packet_len;
     }
 
+    connection& operator=(const connection &conn)
+    {
+        this->socket_fd = conn.socket_fd;
+        this->ip_port = conn.ip_port;
+        this->filename = conn.filename;
+        this->username = conn.username;
+        this->fp = conn.fp;
+        this->packet = conn.packet;
+
+        this->packet_ptr = (char *)&this->packet;
+        this->current_ptr = ((char *)&this->packet) + (conn.current_ptr - conn.packet_ptr);
+        this->remain_packet_len = conn.remain_packet_len;
+    }
+
     bool can_parse_packet()
     {
-        return remain_packet_len == 0 || remain_packet_len == sizeof(packet);
+        return remain_packet_len == 0;// || remain_packet_len == sizeof(packet);
         // right of || is case that reset_buffer() have been called
     }
 
     bool is_write_completely_packet()
     {
-        return remain_packet_len == 0 || remain_packet_len == sizeof(packet);
+        return remain_packet_len == 0;// || remain_packet_len == sizeof(packet);
         // right of || is case that reset_buffer() have been called
     }
 
@@ -126,6 +140,10 @@ struct connection
             {
                 cout << "read from socket error\n";
                 exit(1);
+            }
+            else
+            {
+                cout << "read would block\n";
             }
         }
         else if(main_socket_read_length == 0)
@@ -175,6 +193,7 @@ struct connection
 
     int32_t get_request_type()
     {
+        /*
         if(!can_parse_packet())
         {
             cout << "packet are not received completely!\n";
@@ -184,6 +203,8 @@ struct connection
         {
             return packet.get_request_type();
         }
+        */
+        return packet.get_request_type();
     }
 
     void set_request_type(int32_t request_type)

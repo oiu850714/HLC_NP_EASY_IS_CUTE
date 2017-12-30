@@ -72,11 +72,15 @@ int main(int argc, char **argv)
             new_connections.push_back(main_listening_connection);
         }
 
-        for(int i = 0; i < new_connections.size();)
+        cout << "new_connections.size(): " << new_connections.size() << "\n";
+        for(int i = 0; i < new_connections.size(); )
         {
             new_connections[i].read_from_socket();
+            cout << "fd that would block: " << new_connections[i].socket_fd << "\n";
             if(new_connections[i].can_parse_packet())
             {
+                cout << "request: " << new_connections[i].get_request_type() << "\n";
+                cout << "username: " << new_connections[i].packet.username << "\n";
                 new_connections[i].reset_buffer();
                 switch(new_connections[i].get_request_type())
                 {
@@ -90,8 +94,6 @@ int main(int argc, char **argv)
                         cout << "don't set request type appropriately!\n";
                         break;
                 }
-                cout << "request: " << new_connections[i].get_request_type() << "\n";
-                cout << "username: " << new_connections[i].packet.username << "\n";
                 new_connections.erase(new_connections.begin()+i);
             }
             else
@@ -99,7 +101,7 @@ int main(int argc, char **argv)
                 i++;
             }
         }
-
+        sleep(1);
     }
 }
 /*
