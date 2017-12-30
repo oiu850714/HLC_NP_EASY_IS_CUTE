@@ -15,8 +15,8 @@
 #define SERV_RQ_DOWNLOADING 2 // payload is file content
 #define SERV_RQ_DOWNFIN  3 // file downloading finished
 #define SERV_RQ_UPLOAD 4
-#define SERV_RQ_UPLOADING 5
-#define SERV_RQ_UPFIN 6
+#define CLI_RQ_UPLOADING 5
+#define CLI_RQ_UPFIN 6
 #define CLI_RQ_USERNAME 7
 #define CLI_RQ_UPLOADFILE 8
 #define CLI_RQ_UPLOAD_CONNECTION 9

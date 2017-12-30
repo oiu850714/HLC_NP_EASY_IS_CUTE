@@ -25,19 +25,6 @@ using std::max;
 #include "defineConstant.h"
 #include "functionUtil.h"
 
-
-void find_user_and_add_filelist(connection_server &new_connection, vector<user> &users)
-{
-    for(auto &user : users)
-    {
-        if(user.name == new_connection.username)
-        {
-            new_connection.filelist = user.filelist;
-            return;
-        }
-    }
-}
-
 int main(int argc, char **argv)
 {
     if(argc < 2)
@@ -60,6 +47,8 @@ int main(int argc, char **argv)
     vector<connection_server> listen_file_connections;
     vector<connection_server> download_connections;
 
+    vector<user> users_filelist;
+
     while(true)
     {
         if(main_listening_connection.nonblocking_accept() >= 0)
@@ -72,23 +61,26 @@ int main(int argc, char **argv)
             new_connections.push_back(main_listening_connection);
         }
 
-        cout << "new_connections.size(): " << new_connections.size() << "\n";
         for(int i = 0; i < new_connections.size(); )
         {
             new_connections[i].read_from_socket();
-            cout << "fd that would block: " << new_connections[i].socket_fd << "\n";
             if(new_connections[i].can_parse_packet())
             {
                 cout << "request: " << new_connections[i].get_request_type() << "\n";
                 cout << "username: " << new_connections[i].packet.username << "\n";
-                new_connections[i].reset_buffer();
+                new_connections[i].reset_buffer_and_fill_member_from_packet();
                 switch(new_connections[i].get_request_type())
                 {
                     case CLI_RQ_UPLOAD_CONNECTION:
                         cout << "this is /put session!\n";
+                        main_connections.push_back(new_connections[i]);
+                        //push this connection to client's main session connection
                         break;
                     case CLI_RQ_USERNAME:
                         cout << "client passs username!\n";
+                        new_connections[i].initialize_filelist(users_filelist);
+                        upload_connections.push_back(new_connections[i]);
+                        //push this connection to client's upload session connection
                         break;
                     default:
                         cout << "don't set request type appropriately!\n";
@@ -101,7 +93,58 @@ int main(int argc, char **argv)
                 i++;
             }
         }
-        sleep(1);
+        
+        for(int i = 0; i < main_connections.size(); i++)
+        {
+            if(main_connections[i].get_filelist_size() > 0)
+            {
+                string filename = main_connections[i].pop_filename();
+                main_connections[i].set_filename(filename);
+                download_connections.push_back(main_connections[i]);
+            }
+        }
+        //this loop let users download their files
+
+        for(int i = 0; i < download_connections.size(); i++)
+        {
+
+        }
+
+        for(int i = 0; i < upload_connections.size(); i++)
+        {
+            upload_connections[i].read_from_socket();
+            if(upload_connections[i].can_parse_packet())
+            {
+                upload_connections[i].reset_buffer_and_fill_member_from_packet();
+                switch(upload_connections[i].get_request_type())
+                {
+                    case CLI_RQ_UPLOADFILE:
+                        upload_connections[i].openfile_to_write();
+                        break;
+                    case CLI_RQ_UPLOADING:
+                        if(upload_connections[i].file_is_close())
+                        {
+                            cout << "fp is close but client send file content!\n";
+                        }
+                        else
+                        {
+                            upload_connections[i].wrtie_payload_to_file();
+                        }
+                        break;
+                    case CLI_RQ_UPFIN:
+                        if(upload_connections[i].file_is_close())
+                        {
+                            cout << "fp is close but client say he finish transferring file!\n";
+                        }
+                        else
+                        {
+                            upload_connections[i].close_file();
+                        }
+                        break;
+                }
+            }
+        }
+        //this loop receive users' /put command
     }
 }
 /*

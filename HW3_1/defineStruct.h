@@ -141,10 +141,6 @@ struct connection
                 cout << "read from socket error\n";
                 exit(1);
             }
-            else
-            {
-                cout << "read would block\n";
-            }
         }
         else if(main_socket_read_length == 0)
         {
@@ -180,7 +176,7 @@ struct connection
         }
     }
 
-    void reset_buffer()
+    void reset_buffer_and_fill_member_from_packet()
     {
         current_ptr = packet_ptr;
         remain_packet_len = sizeof(packet);
@@ -347,6 +343,35 @@ struct connection_server: public connection
         {
             set_to_nonblocking(socket_fd);
             return socket_fd;
+        }
+    }
+
+    void append_file_to_list(string &filename)
+    {
+        filelist.push_back(filename);
+    }
+
+    size_t get_filelist_size()
+    {
+        return filelist.size();
+    }
+
+    string pop_filename()
+    {
+        string filename = filelist.back();
+        filelist.pop_back();
+        return filename;
+    }
+
+    void initialize_filelist(vector<user> &users_filelist)
+    {
+        for(auto &user : users_filelist)
+        {
+            if(user.name == this->username)
+            {
+                this->filelist = user.filelist;
+                return;
+            }
         }
     }
 };

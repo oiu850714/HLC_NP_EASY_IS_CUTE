@@ -73,17 +73,17 @@ int main(int argc, char **argv)
         main_socket_connection.write_to_socket();
         if(main_socket_connection.is_write_completely_packet())
         {
-            main_socket_connection.reset_buffer();
+            main_socket_connection.reset_buffer_and_fill_member_from_packet();
             break;
         }
     }
 
     while(true)
     {
-        main_socket_connection.write_to_socket();
-        if(main_socket_connection.is_write_completely_packet())
+        upload_file_connection.write_to_socket();
+        if(upload_file_connection.is_write_completely_packet())
         {
-            main_socket_connection.reset_buffer();
+            upload_file_connection.reset_buffer_and_fill_member_from_packet();
             break;
         }
     }
@@ -150,11 +150,9 @@ int main(int argc, char **argv)
                     if(main_socket_connection.can_parse_packet())
                     {
                         // reset buffer pointer and read data length
-                        main_socket_connection.reset_buffer();
+                        main_socket_connection.reset_buffer_and_fill_member_from_packet();
                         
                         int32_t server_request = main_socket_connection.get_request_type();
-                        sockaddr_in new_connection_sockaddr_in;
-                        char transfer_payload[TRANSFER_PACK_PAYLOADLEN];
                         
                         //read to main_socket's record
                         switch(server_request)
@@ -178,7 +176,7 @@ int main(int argc, char **argv)
 
                         if(upload_file_connection.is_write_completely_packet())
                         {
-                            upload_file_connection.reset_buffer();
+                            upload_file_connection.reset_buffer_and_fill_member_from_packet();
                             upload_file_connection.read_payload_from_file();
                             // may read 0 byte, which means EOF(or fucking error), and payload_len will be set to 0
                             if(upload_file_connection.get_payload_len() == 0)
@@ -197,7 +195,7 @@ int main(int argc, char **argv)
                         if(file_connection.can_parse_packet())
                         {
                             //server send file content
-                            file_connection.reset_buffer();
+                            file_connection.reset_buffer_and_fill_member_from_packet();
                             int32_t server_request = file_connection.get_request_type(); // "0", "1", ...
                             switch(server_request)
                             {
@@ -242,7 +240,7 @@ int main(int argc, char **argv)
                 upload_file_connection.set_username(username);
                 upload_file_connection.openfile_to_read();
                 upload_file_connection.write_to_socket();
-                upload_file_connection.reset_buffer();
+                upload_file_connection.reset_buffer_and_fill_member_from_packet();
                 //反正一 write 之後，object 內部指向 buffer 的指標就會被更動，不管怎樣都要 reset buffer
 
                 //先讀第一段 file content，這樣上面的 FD_ISSET(upload_file_connection.socket_fd, &writing_fds) 比較好寫
