@@ -29,8 +29,14 @@ struct transfer_packet
         if(payload != NULL)
             memcpy(this->payload, payload, payload_len);
     }
-    transfer_packet()
+    transfer_packet() : request_type(-1), payload_len(0)
     {
+        for(int i = 0; i < 50; i++)
+        {
+            username[i] = filename[i] = 0;
+        }
+        for(int i = 0; i < TRANSFER_PACK_PAYLOADLEN; i++)
+            payload[i] = 0;
         //empty packet, whose filed will be filled from server's reply
     }
 
@@ -56,12 +62,14 @@ struct transfer_packet
     
     void set_filename(string &filename)
     {
-        strncpy(this->filename, filename.c_str(), filename.size());
+        //strncpy(this->filename, filename.c_str(), filename.size());
+        strncpy(this->filename, filename.c_str(), filename.size() + 1);
     }
 
     void set_username(string &username)
     {
-        strncpy(this->username, username.c_str(), username.size());
+        //strncpy(this->username, username.c_str(), username.size());
+        strncpy(this->username, username.c_str(), username.size() + 1);
     }
 };
 
@@ -81,6 +89,20 @@ struct connection
 
     connection() : socket_fd(-1), packet_ptr((char *)&packet), fp(NULL), current_ptr((char *)&packet), remain_packet_len(sizeof(packet))
     {
+    }
+
+    connection(const connection &conn)
+    {
+        this->socket_fd = conn.socket_fd;
+        this->ip_port = conn.ip_port;
+        this->filename = conn.filename;
+        this->username = conn.username;
+        this->fp = conn.fp;
+        this->packet = conn.packet;
+
+        this->packet_ptr = (char *)&this->packet;
+        this->current_ptr = ((char *)&this->packet) + (conn.current_ptr - conn.packet_ptr);
+        this->remain_packet_len = conn.remain_packet_len;
     }
 
     bool can_parse_packet()
