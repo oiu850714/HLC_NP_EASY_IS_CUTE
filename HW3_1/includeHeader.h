@@ -1,0 +1,22 @@
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <stdio.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <cstdlib>
+#include <cstring>
+#include <unistd.h>
+#include <string>
+#include <sys/select.h>
+#include <fcntl.h>
+#include <iostream>
+#include <vector>
+#include <sstream>
+#include <algorithm>
+
+using std::string;
+using std::cin;
+using std::cout;
+using std::vector;
+using std::stringstream;
+using std::max;
