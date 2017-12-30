@@ -57,9 +57,7 @@ int main(int argc, char **argv)
 
     connection main_socket_connection;
     main_socket_connection.socket_fd = new_tcp_connection(argv[1], argv[2]);
-    main_socket_connection.socket_fd = new_tcp_connection(argv[1], argv[2]);
     connection upload_file_connection;
-    upload_file_connection.socket_fd = new_tcp_connection(argv[1], argv[2]);
     upload_file_connection.socket_fd = new_tcp_connection(argv[1], argv[2]);
 
     main_socket_connection.set_username(username);
