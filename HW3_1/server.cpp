@@ -25,6 +25,23 @@ using std::max;
 #include "defineConstant.h"
 #include "functionUtil.h"
 
+void print(vector<user> &users)
+{
+    cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+    cout << "#users: " << users.size() << "\n";
+    for(auto &user: users)
+    {
+        cout << "username: " << user.name << "\n";
+        cout << "filelist: ";
+        for(auto &filename : user.filelist)
+        {
+            cout << filename << " ";
+        }
+        cout << "\n";
+    }
+    cout << "\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n";
+}
+
 int main(int argc, char **argv)
 {
     if(argc < 2)
@@ -198,8 +215,20 @@ int main(int argc, char **argv)
                                 if(upload_connections[i].get_username() == users[j].name);
                                 {
                                     username_in_users_flag = 1;
-                                    users[j].filelist.push_back(upload_connections[i].get_filename());
-                                    break;
+                                    int has_same_filename_flag = 0;
+                                    for(auto &filename: users[j].filelist)
+                                    {
+                                        if(upload_connections[i].get_filename() == filename)
+                                        {
+                                            has_same_filename_flag = 1;
+                                            break;
+                                        }
+                                    }
+                                    if(has_same_filename_flag == 0)
+                                    {
+                                        users[j].filelist.push_back(upload_connections[i].get_filename());
+                                        break;
+                                    }
                                 }
                             }
                             if(username_in_users_flag == 0)
@@ -207,8 +236,9 @@ int main(int argc, char **argv)
                                 user new_user;
                                 new_user.name = upload_connections[i].get_username();
                                 new_user.filelist.push_back(upload_connections[i].get_filename());
+                                users.push_back(new_user);
                             }
-
+                            print(users);
                             upload_connections[i].close_file();
                             //關檔案
                         }
