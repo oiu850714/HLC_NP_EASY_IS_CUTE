@@ -115,7 +115,6 @@ int main(int argc, char **argv)
         FD_ZERO(&reading_fds);
         FD_SET(STDIN_FILENO, &reading_fds);
         FD_SET(main_socket_connection.socket_fd, &reading_fds);
-
         FD_SET(upload_file_connection.socket_fd, &writing_fds);
 
         for (auto file_connection : connections)
@@ -145,8 +144,12 @@ int main(int argc, char **argv)
                 }
                 if(FD_ISSET(main_socket_connection.socket_fd, &reading_fds))
                 {
-                    main_socket_connection.read_from_socket();
-
+                    int n = main_socket_connection.read_from_socket();
+                    if(n == 0)
+                    {
+                        cout << "server close connection.\n";
+                        exit(0);
+                    }
                     if(main_socket_connection.can_parse_packet())
                     {
                         // reset buffer pointer and read data length
@@ -177,10 +180,24 @@ int main(int argc, char **argv)
                         if(upload_file_connection.is_write_completely_packet())
                         {
                             upload_file_connection.reset_buffer_and_fill_member_from_packet();
-                            upload_file_connection.read_payload_from_file();
-                            // may read 0 byte, which means EOF(or fucking error), and payload_len will be set to 0
-                            if(upload_file_connection.get_payload_len() == 0)
+                            if(upload_file_connection.get_request_type() != CLI_RQ_UPFIN)
+                            {   
+                                upload_file_connection.read_payload_from_file();
+                                cout << "read payload len: " << upload_file_connection.get_payload_len() << "\n";
+                                // may read 0 byte, which means EOF(or fucking error), and payload_len will be set to 0
+                                if(upload_file_connection.get_payload_len() == 0)
+                                {
+                                    cout << "file content all been read\n";
+                                    upload_file_connection.set_request_type(CLI_RQ_UPFIN);
+                                }
+                                else
+                                {
+                                    upload_file_connection.set_request_type(CLI_RQ_UPLOADING);
+                                }
+                            }
+                            else
                             {
+                                cout << "close file\n";
                                 upload_file_connection.close_file();
                             }
                         }
@@ -191,7 +208,12 @@ int main(int argc, char **argv)
                 {
                     if(FD_ISSET(file_connection.socket_fd, &reading_fds))
                     {
-                        file_connection.read_from_socket();
+                        int n = file_connection.read_from_socket();
+                        if(n == 0)
+                        {
+                            cout << "server close connection.\n";
+                            exit(0);
+                        }
                         if(file_connection.can_parse_packet())
                         {
                             //server send file content
@@ -225,7 +247,8 @@ int main(int argc, char **argv)
         }
 
         if(new_command_flag)
-        {   
+        {
+            new_command_flag = 0;   
             stringstream SS;
             SS << commandline;
             string command;
@@ -245,6 +268,7 @@ int main(int argc, char **argv)
 
                 //先讀第一段 file content，這樣上面的 FD_ISSET(upload_file_connection.socket_fd, &writing_fds) 比較好寫
                 upload_file_connection.read_payload_from_file();
+                upload_file_connection.set_request_type(CLI_RQ_UPLOADING);
 
                 /*
                 transfer_packet file_put_request_packet(CLI_RQ_UPLOADFILE, argv[3], filename.c_str(), NULL, 0, NULL);

@@ -71,12 +71,21 @@ struct transfer_packet
         //strncpy(this->username, username.c_str(), username.size());
         strncpy(this->username, username.c_str(), username.size() + 1);
     }
+
+    void set_sockaddr(sockaddr_in &ip_port)
+    {
+        this->ip_port = ip_port;
+    }
+
+    sockaddr_in get_sockaddr()
+    {
+        return this->ip_port;
+    }
 };
 
 struct connection
 {
     int socket_fd;
-    sockaddr_in ip_port;
     string filename;
     string username;
 
@@ -94,7 +103,6 @@ struct connection
     connection(const connection &conn)
     {
         this->socket_fd = conn.socket_fd;
-        this->ip_port = conn.ip_port;
         this->filename = conn.filename;
         this->username = conn.username;
         this->fp = conn.fp;
@@ -108,7 +116,6 @@ struct connection
     connection& operator=(const connection &conn)
     {
         this->socket_fd = conn.socket_fd;
-        this->ip_port = conn.ip_port;
         this->filename = conn.filename;
         this->username = conn.username;
         this->fp = conn.fp;
@@ -117,6 +124,16 @@ struct connection
         this->packet_ptr = (char *)&this->packet;
         this->current_ptr = ((char *)&this->packet) + (conn.current_ptr - conn.packet_ptr);
         this->remain_packet_len = conn.remain_packet_len;
+    }
+
+    int get_socket_fd()
+    {
+        return socket_fd;
+    }
+
+    string get_username()
+    {
+        return username;
     }
 
     bool can_parse_packet()
@@ -131,7 +148,7 @@ struct connection
         // right of || is case that reset_buffer() have been called
     }
 
-    void read_from_socket()
+    int read_from_socket()
     {
         int main_socket_read_length = read(socket_fd, current_ptr, remain_packet_len);
         if(main_socket_read_length < 0)
@@ -142,17 +159,13 @@ struct connection
                 exit(1);
             }
         }
-        else if(main_socket_read_length == 0)
-        {
-            cout << "server crashed\n";
-            exit(0);
-        }
         else
         {
             cout << "main_socket_read_length: " << main_socket_read_length << "\n";
             current_ptr += main_socket_read_length;
             remain_packet_len -= main_socket_read_length;
         }
+        return main_socket_read_length;
     }
 
     void write_to_socket()
@@ -184,7 +197,6 @@ struct connection
         set_filename(filename);
         string username(packet.username);
         set_username(username);
-        set_sockaddr(packet.ip_port);
     }
 
     int32_t get_request_type()
@@ -210,6 +222,7 @@ struct connection
 
     int32_t get_payload_len()
     {
+        /*
         if(!can_parse_packet())
         {
             cout << "packet are not received completely!\n";
@@ -219,6 +232,8 @@ struct connection
         {
             return packet.get_payload_len();
         }
+        */
+        return packet.get_payload_len();
     }
 
     void set_payload_len(int32_t payload_len)
@@ -226,14 +241,14 @@ struct connection
         packet.set_payload_len(payload_len);
     }
 
-    sockaddr_in& get_sockaddr()
+    sockaddr_in get_sockaddr()
     {
-        return ip_port;
+        return packet.get_sockaddr();
     }
 
-    void set_sockaddr(sockaddr_in& ip_port)
+    void set_sockaddr(sockaddr_in ip_port)
     {
-        this->ip_port = ip_port;
+        packet.set_sockaddr(ip_port);
     }
 
     void set_filename(string &filename)
@@ -265,25 +280,28 @@ struct connection
 
     void connect_by_sockaddr_in()
     {
-        socket_fd = use_sockaddr_in_to_connect(ip_port);
+        socket_fd = use_sockaddr_in_to_connect(packet.ip_port);
     }
 
     void wrtie_payload_to_file()
     {
-        fwrite(&packet.payload, get_payload_len(), sizeof(char), fp);
+        fwrite(&packet.payload, sizeof(char), get_payload_len(), fp);
     }
 
     void read_payload_from_file()
     {
         int32_t payload_len =
-            fread(&packet.payload, sizeof(packet.payload), sizeof(char), fp);
+            fread(&packet.payload, sizeof(char), sizeof(packet.payload), fp);
         set_payload_len(payload_len);
     }
 
     void close_file()
     {
-        fclose(fp);
-        fp = NULL;
+        if(fp != NULL)
+        {   
+            fclose(fp);
+            fp = NULL;
+        }
     }
 
     void close_socket()
@@ -308,18 +326,20 @@ struct user
 
 struct connection_server: public connection
 {
-    int listen_socket_fd;
-    int read_write_flag;
+    int listen_socket_fd = -1;
+    int read_write_flag = 0;
     vector<string> filelist;
+
+    int32_t listen_socket_state_machine = 0;
 
     connection_server() : listen_socket_fd(-1), read_write_flag(-1)
     {
 
     }
 
-    void listen(const char* ip_str)
+    void listen(const char* port_str)
     {
-        listen_socket_fd = new_tcp_listening_nonblocking_socket(ip_str);
+        listen_socket_fd = new_tcp_listening_nonblocking_socket(port_str);
     }
 
     int nonblocking_accept()
@@ -367,13 +387,48 @@ struct connection_server: public connection
     {
         for(auto &user : users_filelist)
         {
-            if(user.name == this->username)
+            if(this->username == user.name)
             {
                 this->filelist = user.filelist;
                 return;
             }
         }
     }
+
+    int32_t get_download_socket_state()
+    {
+        return listen_socket_state_machine;
+    }
+
+    void set_download_socket_state(int32_t state)
+    {
+        listen_socket_state_machine = state;
+    }
+
+    void set_sockaddr_by_getsockname()
+    {
+        socklen_t socklen = sizeof(sockaddr_in);
+        getsockname(this->listen_socket_fd, (sockaddr *) &(packet.ip_port), &socklen);
+    }
+
+    void close_listening_socket()
+    {
+        if(listen_socket_fd == -1)
+            return;
+        else
+            close(listen_socket_fd);
+    }
+
+    void openfile_to_write_server()
+    {
+        fp = Fopen((filename + "-" + username).c_str(), "wb");
+    }
+
+    void openfile_to_read_server()
+    {
+        fp = Fopen((filename + "-" + username).c_str(), "rb");
+    }
+    // 用後綴來防止不同 users 上傳相同檔名的情況
 };
 
 

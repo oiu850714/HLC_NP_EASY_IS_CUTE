@@ -6,3 +6,4 @@ server
 showip.cpp
 showip
 *.vscode*
+clients/
