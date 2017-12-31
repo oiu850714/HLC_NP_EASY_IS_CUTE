@@ -90,16 +90,6 @@ int main(int argc, char **argv)
 
 
     cout << "Welcome to the dropbox-like server! : " << argv[3] << "\n";
-    
-    /*
-    transfer_packet send_name_packet(CLI_RQ_USERNAME, argv[3], EMPTY_STR, NULL, htonl(0), NULL);
-    write(main_socket_connection.socket_fd, &send_name_packet, sizeof(send_name_packet));
-    //一連上 server 就送 username 給 server(上面的 send_name_packet 除了 request_type 跟 username 以外其他都是垃圾)
-
-    transfer_packet send_connection_packet(CLI_RQ_UPLOAD_CONNECTION, argv[3], EMPTY_STR, NULL, htonl(0), NULL);
-    write(upload_file_connection.socket_fd, &send_connection_packet, sizeof(send_connection_packet));
-    */
-
 
     vector<connection> connections;
     char commandline[MAXLINE];
