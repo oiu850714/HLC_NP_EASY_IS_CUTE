@@ -1,5 +1,3 @@
-## 16.2 Template Argument Deduction
-
 # NTCU-CS-1061-Introduction-to-Network-Programming-assignment
 ### Project 1
 * A simple chat room system
